@@ -1,0 +1,95 @@
+SPRING SECURITY IMPLEMENTATION ______ VERSION 6 ( LATEST )
+
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfiguration {
+	
+	  @Bean
+	    public UserDetailsService getUserDetailsService() {
+	        return new UserDetailsServiceImp();
+	    }
+
+	    @Bean
+	    public BCryptPasswordEncoder getPasswordEncoder() {
+	        return new BCryptPasswordEncoder();
+	    }
+
+	    @Bean
+	    public DaoAuthenticationProvider authenticationProvider() {
+	        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
+	        daoAuthenticationProvider.setUserDetailsService(getUserDetailsService());
+	        daoAuthenticationProvider.setPasswordEncoder(getPasswordEncoder());
+	        return daoAuthenticationProvider;
+	    }
+
+	    @Bean
+	    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+	        return authenticationConfiguration.getAuthenticationManager();
+	    }
+
+	    @Bean
+	    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+	        http.authorizeHttpRequests(authorizeRequests -> authorizeRequests
+	                .requestMatchers("/admin/**").hasRole("ADMIN")
+	                .requestMatchers("/user/**").hasRole("USER")
+	                .requestMatchers("/**").permitAll()
+	            )
+	            .formLogin(formLogin -> formLogin
+	                .loginPage("/signin")
+	                .loginProcessingUrl("/login-process")
+	                .defaultSuccessUrl("/user/index")
+					/* .failureUrl("/signin?error=true") */ 
+	            )
+	            .csrf(csrf -> csrf.disable());
+
+	        return http.build();
+	    }
+
+}
+
+
+
+=========================================================================================================================
+
+
+SPRING SECURITY IMPLEMENTATION ______ VERSION 3 ( OLD VERSION )
+
+
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
+
+	@Bean
+	public UserDetailsService getUserDetailsService() {
+		return new UserDetailsServiceImpl();
+	}
+
+	@Bean
+	public BCryptPasswordEncoder getPasswordEncoder() {
+		return new BCryptPasswordEncoder();
+	}
+
+	@Bean
+	public DaoAuthenticationProvider authenticationProvider() {
+
+		DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
+		daoAuthenticationProvider.setUserDetailsService(this.getUserDetailsService());
+		daoAuthenticationProvider.setPasswordEncoder(getPasswordEncoder());
+		return daoAuthenticationProvider;
+
+	}
+
+	@Override
+	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+		auth.authenticationProvider(this.authenticationProvider());
+	}
+
+	@Override
+	protected void configure(HttpSecurity http) throws Exception {
+		http.authorizeRequests().antMatchers("/admin/**").hasRole("ADMIN").antMatchers("/user/**").hasRole("USER")
+				.antMatchers("/**").permitAll().and().formLogin().loginPage("/signin")
+				.loginProcessingUrl("/login-process").defaultSuccessUrl("/user/index").and().csrf().disable();
+	}
+}
